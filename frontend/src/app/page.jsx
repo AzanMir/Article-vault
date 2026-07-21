@@ -1,30 +1,23 @@
 import Link from "next/link";
 import ArticleCard from "@/components/articles/ArticleCard";
+import HeroButtons from "@/components/HeroButtons";
 
-const articles = [
-  {
-    id: 1,
-    title: "Getting Started with JWT Authentication",
-    author: "John Doe",
-    excerpt:
-      "Learn how JWT authentication works in modern web applications.",
-  },
-  {
-    id: 2,
-    title: "Understanding MongoDB Populate()",
-    author: "Jane Smith",
-    excerpt:
-      "A beginner-friendly guide to MongoDB relationships using populate().",
-  },
-  {
-    id: 3,
-    title: "Building REST APIs with Express",
-    author: "Alex Brown",
-    excerpt:
-      "Create scalable REST APIs using Node.js, Express, and MongoDB.",
-  },
-];
-export default function Home() {
+async function fetchArticles() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/articles`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.articles ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export default async function Home() {
+  const articles = await fetchArticles();
+
   return (
     <>
       {/* Hero */}
@@ -38,37 +31,33 @@ export default function Home() {
           Learn modern web development one article at a time.
         </p>
 
-        <div className="mt-10 flex justify-center gap-4">
-          <Link
-            href="/"
-            className="rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
-          >
-            Explore Articles
-          </Link>
-
-          <Link
-            href="/register"
-            className="rounded-md border px-6 py-3 font-medium hover:bg-gray-100"
-          >
-            Get Started
-          </Link>
-        </div>
+        <HeroButtons />
       </section>
 
       {/* Latest Articles */}
-      <section className="mx-auto max-w-7xl px-6 pb-24">
-        <h2 className="mb-8 text-3xl font-bold">
-          Latest Articles
-        </h2>
+      <section id="articles" className="mx-auto max-w-7xl px-6 pb-24">
+        <h2 className="mb-8 text-3xl font-bold">Latest Articles</h2>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => (
-            <ArticleCard
-              key={article.id}
-              {...article}
-            />
-          ))}
-        </div>
+        {articles.length === 0 ? (
+          <p className="text-gray-500">
+            No articles yet.{" "}
+            <Link href="/register" className="text-blue-600 hover:underline">
+              Be the first to write one!
+            </Link>
+          </p>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {articles.map((article) => (
+              <ArticleCard
+                key={article._id}
+                id={article._id}
+                title={article.title}
+                author={article.author?.username ?? "Unknown"}
+                excerpt={article.content.slice(0, 120) + "…"}
+              />
+            ))}
+          </div>
+        )}
       </section>
     </>
   );
